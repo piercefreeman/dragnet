@@ -40,6 +40,7 @@ RE_XML_ENCODING = re.compile(
 RE_TEXT = re.compile(r'[^\W_]+', flags=re.UNICODE)
 re_tokenizer = re.compile(r'[\W_]+', re.UNICODE)
 re_tokenizer_nounicode = re.compile(b'[\W_]+')
+re_multiple_newline = re.compile(b'\n[\n\s]*')
 
 
 def simple_tokenizer(x):
@@ -103,7 +104,7 @@ cdef cpp_set[string] READABILITY_MINUS5
 READABILITY_MINUS5 = {b'h1', b'h2', b'h3', b'h4', b'h5', b'h6', b'th'}
 
 
-cdef cpp_set[char] WHITESPACE = set([<char>' ', <char>'\t', <char>'\n',
+cdef cpp_set[char] WHITESPACE = set([<char>' ', <char>'\t',
     <char>'\r', <char>'\f', <char>'\v'])
 
 cdef vector[string] _tokens_from_text(vector[string] text):
@@ -431,6 +432,9 @@ cdef class PartialBlock:
             # only process blocks with something other then white space
             block_text = b' '.join(block_tokens)
             link_text = b' '.join(self.link_tokens)
+
+            # remove duplicate newlines
+            block_text = re_multiple_newline.sub(b"\n", block_text).strip()
 
             # compute link/text density
             at = re_tokenizer_nounicode.split(link_text)
